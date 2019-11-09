@@ -5,12 +5,12 @@ import matplotlib.pyplot as plt
 import tensorflow as tf
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # 只显示error，不显示其他信息
-load_pre = False  # 是否装载本地权重文件的开关
+load_pre = True  # 是否装载本地权重文件的开关
 
 
 class Trainer:
     def __init__(self, train_data, batch_size=32, epochs=20, r=10, init_lr=0.02):
-        self.train_data = train_data
+        self.train_data = train_data.values
         self.batch_size = batch_size
         self.epochs = epochs  # 每轮训练epochs次
         self.r = r  # 每轮保存一次参数，训练r轮

@@ -1,28 +1,31 @@
 import numpy as np
 import pandas as pd
 
-load_txt = True
-age_path = 'age_bins.txt'
+load_txt = True  # 文件读取开关，分箱计算量不小，没必要每次都算
+base_path = './data/'
 
 
 class Binning:
+
     def __init__(self, data):
         self.data = data
+        self.label = self.data.columns.values[0]  # 分类标准为列标题第一个，也就是survived
+        self.feature = self.data.columns.values[1].lower()  # 待分箱特征为输入的列标题的第二个
 
     # 卡方分箱方法
-    def chimerge(self):
+    def chimerge(self, limit):
         # 分类指标为Pclass（与age）相关性最大
         def initial_dataset(dataset):
             data_list = []
             for client in dataset.values:
-                temp = {'age': client[0]}
+                temp = {self.feature: client[0]}
                 data_list.append((temp, client[1:]))
-            data_list = sorted(data_list, key=lambda x: x[0]['age'])
+            data_list = sorted(data_list, key=lambda x: x[0][self.feature])
             return data_list
 
         def chi_square(bin1, bin2):
-            stat1 = np.zeros(3)
-            stat2 = np.zeros(3)
+            stat1 = np.zeros(len(bin1[0][1]))
+            stat2 = np.zeros(len(bin2[0][1]))
             for person in bin1:
                 stat1 += person[1]
             for person in bin2:
@@ -30,14 +33,13 @@ class Binning:
             stat = np.vstack([stat1, stat2])
             n = np.sum(stat)
             for i in range(2):
-                for j in range(3):
+                for j in range(len(bin1[0][1])):
                     eij = np.sum(stat[:, j]) * np.sum(stat[i, :]) / n
                     stat[i][j] = np.square(stat[i][j] - eij) / (eij + 1e-10)
             return np.sum(stat)
 
-        def merge(data_list):
+        def merge(data_list, path):
             bins = [[person] for person in data_list]
-            limit = 7
             while len(bins) > limit:
                 chi2s = []
                 min_idxs = []
@@ -84,23 +86,21 @@ class Binning:
                     merged_bins.append(temp_bin)
                 bins = merged_bins
 
-            points = []
+            points = [-1.]
             for obj in bins:
-                if not obj[0][0]['age'] in points:
-                    points.append(obj[0][0]['age'])
-                if not obj[-1][0]['age'] in points:
-                    points.append(obj[-1][0]['age'])
-            with open(age_path, 'w+') as file:
+                points.append(obj[-1][0][self.feature])
+            with open(path, 'w+') as file:
                 for point in points:
                     file.write(str(point)+'\n')
             return points
 
-        dataset = pd.get_dummies(self.data, columns=['Pclass'])
-        data_list = initial_dataset(dataset)
+        path = base_path + self.feature + '_bins.txt'
         if not load_txt:
-            bins = merge(data_list)
+            dataset = pd.get_dummies(self.data, columns=[self.label])
+            data_list = initial_dataset(dataset)
+            bins = merge(data_list, path)
         else:
-            with open(age_path) as file:
+            with open(path) as file:
                 bins = [float(point[:-1]) for point in file.readlines()]
         return bins
 
