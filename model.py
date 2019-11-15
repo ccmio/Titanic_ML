@@ -1,5 +1,5 @@
-from keras.models import Sequential, Model
-from keras.layers import Dense, Dropout, BatchNormalization, Activation
+from tensorflow.keras.models import Sequential, Model
+from tensorflow.keras.layers import Dense, Dropout, BatchNormalization, Activation
 import pandas as pd
 import numpy as np
 pd.set_option('display.max_columns', 1000, 'max_rows', 100000, 'expand_frame_repr', False)
@@ -14,10 +14,10 @@ class MyModel:
     def my_mlp():
         model = Sequential()
         # 不写input_shape会报无法载入weights的错！
-        model.add(Dense(input_shape=(8,), units=16))
+        model.add(Dense(input_shape=(9,), units=16))
         model.add(BatchNormalization())
         model.add(Activation('relu'))
-        model.add(Dropout(0.4))
+        model.add(Dropout(0.5))
 
         model.add(Dense(units=2))
         model.add(BatchNormalization())
@@ -29,25 +29,25 @@ class MyModel:
         pass
 
     @staticmethod
-    def my_bayes(dataframe, lamb=1): # lamb 拉普拉斯平滑系数
+    def my_bayes(dataframe, lamb=1):  # lamb 拉普拉斯平滑系数
 
         '''
         df['Age', 'Title', 'SibSp', 'Parch', 'Pclass', 'Fare']
         '''
 
         # 计算所有feature的可取值个数 cates_num
+        pre_target = dataframe.columns.values[0]
         cates_num = [len(set(feature[1])) for feature in dataframe.iteritems()]
         cates_num[0] -= 1  # 除掉待预测的age=nan
-        print(cates_num)
-        to_pre = dataframe.loc[dataframe['Age'].isnull()].values[:, 1:]
+        to_pre = dataframe.loc[dataframe[pre_target].isnull()].values[:, 1:]
 
         df = dataframe.dropna(axis=0)
         # 计算分类结果的先验概率y_prob[]
         y_num = []
         y_prob = []
-        total_age_num = len(df['Age'])
+        total_age_num = len(df[pre_target])
         for age in range(cates_num[0]):
-            age_num = sum(df['Age'] == age)
+            age_num = sum(df[pre_target] == age)
             y_num.append(age_num)
             y_prob.append(age_num/total_age_num)
 
@@ -60,7 +60,7 @@ class MyModel:
                 # cates_num[idx+1]为第idx个feature可以取值的个数
                 sj = cates_num[idx+1]
                 for x_ij in range(sj):
-                    temp_x_i.append((len(df.loc[(df[x_i] == x_ij) & (df['Age'] == age)])+lamb)/(y_num[age] + sj * lamb))
+                    temp_x_i.append((len(df.loc[(df[x_i] == x_ij) & (df[pre_target] == age)])+lamb)/(y_num[age] + sj * lamb))
                 temp_age.append(np.array(temp_x_i))
             con_prob.append(np.array(temp_age))
         con_prob = np.array(con_prob)

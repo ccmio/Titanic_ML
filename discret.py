@@ -10,7 +10,7 @@ class Binning:
     def __init__(self, data):
         self.data = data
         self.label = self.data.columns.values[0]  # 分类标准为列标题第一个，也就是survived
-        self.feature = self.data.columns.values[1].lower()  # 待分箱特征为输入的列标题的第二个
+        self.feature = self.data.columns.values[1].lower()  # 待分箱特征为输入的列标题的第二个（Age，Fare）
 
     # 卡方分箱方法
     def chimerge(self, limit):

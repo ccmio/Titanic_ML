@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import tensorflow as tf
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # 只显示error，不显示其他信息
-load_pre = True  # 是否装载本地权重文件的开关
+load_pre = False  # 是否装载本地权重文件的开关
 
 
 class Trainer:
@@ -16,20 +16,15 @@ class Trainer:
         self.r = r  # 每轮保存一次参数，训练r轮
         self.init_lr = init_lr
     
-    def train(self, weights_path):
-        x_train = self.train_data[:, 1:]
-        y_train = self.train_data[:, :1].squeeze()
+    def train(self, checkpoint_save_path):
+        x_train = np.array(self.train_data[:, 1:], dtype=np.float)
+        y_train = np.array(self.train_data[:, :1], dtype=np.float)
         np.random.seed(100)
         np.random.shuffle(x_train)
         np.random.seed(100)
         np.random.shuffle(y_train)
-
         model = MyModel.my_mlp()
 
-        acc = []
-        val_acc = []
-        loss = []
-        val_loss = []
         '''
         lr = 0.2
         decay_steps=120,
@@ -52,20 +47,30 @@ class Trainer:
                       loss='sparse_categorical_crossentropy',
                       metrics=['sparse_categorical_accuracy'])
         
-        if load_pre and os.path.exists(weights_path):
-            model.load_weights(weights_path)
-        
+        if load_pre and os.path.exists(checkpoint_save_path):
+            model.load_weights(checkpoint_save_path)
+
+        cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=checkpoint_save_path, save_weights_only=True,
+                                                      monitor='loss',
+                                                      save_best_only=True, verbose=0)
         for i in range(self.r):
             print('\n\n\n====================round {}==================\n\n\n'.format(i))
-            h = model.fit(x_train, y_train, batch_size=self.batch_size, epochs=self.epochs, validation_freq=1, validation_split=0.2)
-            model.save_weights(weights_path)
-            acc += h.history['sparse_categorical_accuracy']
-            val_acc += h.history['val_sparse_categorical_accuracy']
-            loss += h.history['loss']
-            val_loss += h.history['val_loss']
-        model.summary()
+            h = model.fit(x_train, y_train, batch_size=self.batch_size, epochs=self.epochs, validation_freq=1, validation_split=0.2, verbose=1, callbacks=[cp_callback])
+            model.save_weights(checkpoint_save_path)
 
-        plt.figure(figsize=(8, 8))
+        file = open('./data/train_weights.txt', 'w')  # 参数提取
+        for v in model.trainable_weights:
+            file.write(str(v.name) + '\n')
+            file.write(str(v.shape) + '\n')
+            file.write(str(v.numpy()) + '\n')
+        file.close()
+
+        acc = h.history['sparse_categorical_accuracy']
+        val_acc = h.history['val_sparse_categorical_accuracy']
+        loss = h.history['loss']
+        val_loss = h.history['val_loss']
+
+        plt.figure(figsize=(14, 8))
         
         plt.subplot(1, 2, 1)
         plt.plot(acc, c='r', label='Training acc')
