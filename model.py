@@ -8,7 +8,7 @@ np.set_printoptions(threshold=np.inf, linewidth=np.inf)
 
 class MyModel:
     def __init__(self):
-        super(Model).__init__()
+        pass
 
     @staticmethod
     def my_mlp():
@@ -34,11 +34,14 @@ class MyModel:
         '''
         df['Age', 'Title', 'SibSp', 'Parch', 'Pclass', 'Fare']
         '''
-
         # 计算所有feature的可取值个数 cates_num
         pre_target = dataframe.columns.values[0]
+        print('{:>10s}: Bayes classifying...\n'.format(pre_target))
         cates_num = [len(set(feature[1])) for feature in dataframe.iteritems()]
-        cates_num[0] -= 1  # 除掉待预测的age=nan
+        pre_cates = len(set(dataframe.loc[(dataframe[pre_target].notnull()), pre_target].values))
+        cates_num.pop(0)
+        cates_num.insert(0, pre_cates)
+
         to_pre = dataframe.loc[dataframe[pre_target].isnull()].values[:, 1:]
 
         df = dataframe.dropna(axis=0)
@@ -70,12 +73,15 @@ class MyModel:
         for person in to_pre:
             person_prob = []
             for age in range(cates_num[0]):
-                prob = 1
+                prob = y_prob[age]
                 for idx, feature in enumerate(person):
-                    prob *= y_prob[age] * con_prob[age][idx][feature]
+                    try:
+                        prob *= con_prob[age][idx][feature]
+                    except:
+                        print(age, idx, feature)
                 person_prob.append(prob)
             pre_result.append(np.argmax(person_prob))
-
+        print('{:>10s}: Bayes classify DONE.\n'.format(pre_target))
         return pre_result
 
 

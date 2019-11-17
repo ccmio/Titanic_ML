@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-load_txt = True  # 文件读取开关，分箱计算量不小，没必要每次都算
+load_txt = False  # 文件读取开关，分箱计算量不小，没必要每次都算
 base_path = './data/'
 
 
@@ -95,6 +95,7 @@ class Binning:
             return points
 
         path = base_path + self.feature + '_bins.txt'
+        print('{:>10s}: Chimerging...\n'.format(self.feature))
         if not load_txt:
             dataset = pd.get_dummies(self.data, columns=[self.label])
             data_list = initial_dataset(dataset)
@@ -102,6 +103,7 @@ class Binning:
         else:
             with open(path) as file:
                 bins = [float(point[:-1]) for point in file.readlines()]
+        print('{:>10s}: ChiMerge DONE.\n'.format(self.feature))
         return bins
 
 
