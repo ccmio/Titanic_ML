@@ -51,7 +51,13 @@ class Trainer:
         if load_pre and os.path.exists(checkpoint_save_path):
             model.load_weights(checkpoint_save_path)
 
-        h = model.fit(x_train, y_train, epochs=self.epochs, batch_size=self.batch_size, validation_freq=1, validation_split=0.2, verbose=1)
+        cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=checkpoint_save_path,
+                                                         save_weights_only=True,
+                                                         monitor='loss',
+                                                         save_best_only=True,
+                                                         verbose=1)
+
+        h = model.fit(x_train, y_train, epochs=self.epochs, batch_size=self.batch_size, validation_freq=1, validation_split=0.2, verbose=1, callbacks=[cp_callback])
         model.save_weights(checkpoint_save_path)
 
         file = open('./data/train_weights.txt', 'w')  # 参数提取

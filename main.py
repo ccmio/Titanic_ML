@@ -14,7 +14,7 @@ def main():
 
     # 预测模型可选：mlp, bayes, ranforest
     print('\n==================== Predicting... ====================\n')
-    predictor = Predictor('ranforest')
+    predictor = Predictor('mlp')
     pred_result = predictor.predict(data)
     pred_result.to_csv(result_path, index=False)
     print('================= Prediction Generated. =================\n')

@@ -18,7 +18,7 @@ class MyModel:
         model.add(Dense(input_shape=(10,), units=16))
         model.add(BatchNormalization())
         model.add(Activation('relu'))
-        model.add(Dropout(0.5))
+        model.add(Dropout(0.3))
 
         model.add(Dense(units=2))
         model.add(BatchNormalization())
@@ -234,10 +234,7 @@ class MyModel:
             for age in range(cates_num[0]):
                 prob = y_prob[age]
                 for idx, feature in enumerate(person):
-                    try:
-                        prob *= con_prob[age][idx][feature]
-                    except:
-                        print(age, idx, feature)
+                    prob *= con_prob[age][idx][feature]
                 person_prob.append(prob)
             pre_result.append(np.argmax(person_prob))
         print('{:>10s}: Bayes classify DONE.\n'.format(pre_target))

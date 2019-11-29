@@ -104,13 +104,13 @@ class Dealer:
             age_bins = age_binning.chimerge(limit=7)
             res = pd.cut(train_test['Age'], age_bins, labels=range(7))
             train_test['Age'] = res
-            fare_binning = Binning(train_test[['Pclass', 'Fare']].dropna(axis=0))
+            fare_binning = Binning(train_test[['DataLacker', 'Fare']].dropna(axis=0))
             fare_bins = fare_binning.chimerge(limit=11)
             res = pd.cut(train_test['Fare'], fare_bins, labels=range(10, -1, -1))
             train_test['Fare'] = res
 
             # Age缺失值处理
-            pre_ages = MyModel.my_bayes(train_test[['Age', 'Title', 'SibSp', 'Parch']])
+            pre_ages = MyModel.my_bayes(train_test[['Age', 'Pclass']])
             train_test.loc[(train_test['Age'].isnull()), 'Age'] = pre_ages
 
             # Deck缺失值处理
@@ -118,8 +118,7 @@ class Dealer:
             train_test.loc[(train_test['Deck'].isnull()), 'Deck'] = pre_decks
 
             train_test['Deck'] = train_test['Deck'].astype(int)
-            print(len(train_test[train_test.duplicated()]))
-            print(len(train_test))
+
             with open(cleaned_data_path, 'wb') as file:
                 pickle.dump(train_test, file)
         train_test = train_test[['Survived', 'Title', 'Sex', 'Age', 'SibSp', 'Parch', 'Embarked', 'Pclass', 'Fare', 'Deck', 'DataLacker']]
