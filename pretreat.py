@@ -27,7 +27,6 @@ class Dealer:
             train = pd.read_csv(self.train_path, header=0)
             test = pd.read_csv(self.test_path, header=0)
             train_test = pd.concat([train, test], sort=True)
-
             # 缺失值统计
             for col in train_test.columns.tolist():
                 missing_num = train_test[col].isnull().sum()
@@ -36,6 +35,13 @@ class Dealer:
             print('==================== data loaded. ===================\n')
 
             print('\n==================== feature engineering... ===================\n')
+            # 生成一个feature，用来标示数据缺失程度——显然数据缺失的越多越可能是个死人
+            train_test['DataLacker'] = None
+            train_test.loc[(train_test['Age'].isnull()) & (train_test['Cabin'].isnull()), 'DataLacker'] = 3
+            train_test.loc[(train_test['Age'].notnull()) & (train_test['Cabin'].isnull()), 'DataLacker'] = 2
+            train_test.loc[(train_test['Age'].isnull()) & (train_test['Cabin'].notnull()), 'DataLacker'] = 1
+            train_test.loc[(train_test['Age'].notnull()) & (train_test['Cabin'].notnull()), 'DataLacker'] = 0
+
             # 处理name标签
             pattern1 = '.*,(.*)'
             pattern2 = '^(.*?)\.'
@@ -48,7 +54,6 @@ class Dealer:
             train_test['Name1'].replace(['Master'], 'Master', inplace=True)
             train_test.drop(['Name', 'Ticket', 'PassengerId'], axis=1, inplace=True)
             train_test.rename(columns={'Name1': 'Title'}, inplace=True)
-            train_test = train_test[['Survived', 'Title', 'Sex', 'Age', 'SibSp', 'Parch', 'Embarked', 'Pclass', 'Fare', 'Cabin']]
 
             # 处理Cabin标签
             pattern3 = '.*([A-Z])[0-9]*'
@@ -92,7 +97,7 @@ class Dealer:
                 ax.xaxis.set_ticks_position('top')
                 bottom, top = ax.get_ylim()  # matplotlib3.1.1的bug，会导致heatmap图上下边缘显示不全，只好通过手动设定轴的范围来解决
                 ax.set_ylim(bottom + 0.5, top - 0.5)
-                plt.show()
+                # plt.show()
 
             # 连续数据离散化 - 卡方分箱
             age_binning = Binning(train_test[['Pclass', 'Age']].dropna(axis=0))
@@ -108,20 +113,20 @@ class Dealer:
             pre_ages = MyModel.my_bayes(train_test[['Age', 'Title', 'SibSp', 'Parch']])
             train_test.loc[(train_test['Age'].isnull()), 'Age'] = pre_ages
 
-            #  Deck缺失值处理
+            # Deck缺失值处理
             pre_decks = MyModel.my_bayes(train_test[['Deck', 'Pclass', 'Fare']])
             train_test.loc[(train_test['Deck'].isnull()), 'Deck'] = pre_decks
 
             train_test['Deck'] = train_test['Deck'].astype(int)
-
-            # train_test = pd.get_dummies(train_test, columns=['Survived', 'Title', 'Sex', 'Age', 'SibSp', 'Parch', 'Embarked', 'Pclass', 'Fare'])
-
+            print(len(train_test[train_test.duplicated()]))
+            print(len(train_test))
             with open(cleaned_data_path, 'wb') as file:
                 pickle.dump(train_test, file)
+        train_test = train_test[['Survived', 'Title', 'Sex', 'Age', 'SibSp', 'Parch', 'Embarked', 'Pclass', 'Fare', 'Deck', 'DataLacker']]
 
+        result = MyModel.my_ranforest(train_test)
         print('=================== feature engineering Done. =================\n')
         return train_test
-
 
         # 粗略可视化，观察Survived Embarked之间的互相影响，并以age的直方图来呈现
         # grid = sns.FacetGrid(train_test, col='Survived', row='Pclass', height=2.2, aspect=1.6)
