@@ -12,9 +12,9 @@ def main():
     data = Dealer(train_path, test_path)
     data = data.load_clean()
 
-    # 预测模型可选：mlp, bayes, ranforest
+    # 预测模型可选：mlp, bayes, ranforest, voting
     print('\n==================== Predicting... ====================\n')
-    predictor = Predictor('mlp')
+    predictor = Predictor('voting')
     pred_result = predictor.predict(data)
     pred_result.to_csv(result_path, index=False)
     print('================= Prediction Generated. =================\n')

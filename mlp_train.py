@@ -25,7 +25,6 @@ class Trainer:
         np.random.shuffle(x_train)
         np.random.seed(100)
         np.random.shuffle(y_train)
-        model = MyModel.my_mlp()
 
         '''
         lr = 0.2
@@ -37,13 +36,13 @@ class Trainer:
         val_acc = 0.7989
         '''
         # 指数衰减学习率
-        lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
-            self.init_lr,
-            decay_steps=14,
-            decay_rate=0.99,
-            staircase=True)
-        optimizer = SGD(learning_rate=lr_schedule)
-
+        # lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
+        #     self.init_lr,
+        #     decay_steps=14,
+        #     decay_rate=0.99,
+        #     staircase=True)
+        model = MyModel.my_mlp()
+        optimizer = Adam(learning_rate=self.init_lr)
         model.compile(optimizer=optimizer,
                       loss='sparse_categorical_crossentropy',
                       metrics=['sparse_categorical_accuracy'])

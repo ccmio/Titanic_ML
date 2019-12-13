@@ -3,6 +3,7 @@ import tensorflow as tf
 import pandas as pd
 import numpy as np
 from mlp_train import Trainer
+from scipy import stats
 
 
 reTrain = True
@@ -17,7 +18,7 @@ class Predictor:
             # mlp超参数
             batch_size = 128
             epochs = 1000
-            init_lr = 0.2
+            init_lr = 5e-4
             '''
             参数提取/备用
             file = open('./data/pre_weights.txt', 'w')
@@ -46,6 +47,18 @@ class Predictor:
         elif self.model == 'ranforest':
             pred_labels = np.array(MyModel.my_ranforest(data), dtype=np.int)
 
+        elif self.model == 'voting':
+            bayes_pred = np.array(MyModel.my_bayes(data))
+            ranforest_pred = np.array(MyModel.my_ranforest(data), dtype=np.int)
+            model = MyModel.my_mlp()
+            model.load_weights(checkpoint_save_path)
+            to_pre = data[891:].copy()
+            to_pre.drop(['Survived'], axis=1, inplace=True)
+            to_pre = tf.convert_to_tensor(to_pre.values, dtype=tf.float64)
+            pred_labels = model.predict(to_pre)
+            mlp_pred = tf.argmax(pred_labels, axis=1)
+            result = [bayes_pred, ranforest_pred, mlp_pred]
+            pred_labels = stats.mode(np.array(result))[0][0]
         # 处理结果成kaggle接受的数据格式
         test = pd.read_csv(test_path)
         test.drop(test.columns[1:], axis=1, inplace=True)

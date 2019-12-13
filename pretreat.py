@@ -9,7 +9,7 @@ pd.set_option('display.max_columns', 1000, 'max_rows', 100000, 'expand_frame_rep
 
 # 是否装载制作好的训练集
 cleaned_data_path = './data/cleaned_data'
-load_data = False
+load_data = True
 
 
 class Dealer:
@@ -27,6 +27,7 @@ class Dealer:
             train = pd.read_csv(self.train_path, header=0)
             test = pd.read_csv(self.test_path, header=0)
             train_test = pd.concat([train, test], sort=True)
+
             # 缺失值统计
             for col in train_test.columns.tolist():
                 missing_num = train_test[col].isnull().sum()
@@ -123,7 +124,6 @@ class Dealer:
                 pickle.dump(train_test, file)
         train_test = train_test[['Survived', 'Title', 'Sex', 'Age', 'SibSp', 'Parch', 'Embarked', 'Pclass', 'Fare', 'Deck', 'DataLacker']]
 
-        result = MyModel.my_ranforest(train_test)
         print('=================== feature engineering Done. =================\n')
         return train_test
 

@@ -2,6 +2,7 @@ from tensorflow.keras.models import Sequential, Model
 from tensorflow.keras.layers import Dense, Dropout, BatchNormalization, Activation
 import pandas as pd
 import numpy as np
+from scipy import stats
 
 pd.set_option('display.max_columns', 1000, 'max_rows', 100000, 'expand_frame_repr', False)
 np.set_printoptions(threshold=np.inf, linewidth=np.inf)
@@ -107,7 +108,7 @@ class MyModel:
                     # print(dataset)
             return parent
 
-        def predict(parent, dataset):
+        def predict(parent, dataset):  # bagging
             feature_dict = {idx: value for idx, value in enumerate(dataset.columns.values)}
             feature = parent.feature
             value = parent.value
@@ -139,30 +140,30 @@ class MyModel:
                 parent.survived = 1 if survived_prob > 0.5 else 0
             return
 
-        def pruning(tree):
-            t = tree
-            alpha = np.inf
-            g = []
-            ctt = 0
-            tt = 0
-
-            def postorder(tree, ctt, tt, depth):
-                if tree.left and tree.right:
-                    print(depth)
-                    print(tree.loss)
-                    ctt_l, tt_l = postorder(tree.left, ctt, tt, depth+1)
-                    ctt_r, tt_r = postorder(tree.right, ctt, tt, depth+1)
-                    ctt = ctt_l + ctt_r
-                    tt = tt_l + tt_r
-                    g.append((tree.loss - ctt)/(tt - 1))
-                    return ctt, tt
-                else:
-                    ctt += tree.loss
-                    tt += 1
-                    return ctt, tt
-            postorder(tree, ctt, tt, 0)
-            print(g, ctt, tt)
-            return
+        # def pruning(tree):
+        #     t = tree
+        #     alpha = np.inf
+        #     g = []
+        #     ctt = 0
+        #     tt = 0
+        #
+        #     def postorder(tree, ctt, tt, depth):
+        #         if tree.left and tree.right:
+        #             print(depth)
+        #             print(tree.loss)
+        #             ctt_l, tt_l = postorder(tree.left, ctt, tt, depth+1)
+        #             ctt_r, tt_r = postorder(tree.right, ctt, tt, depth+1)
+        #             ctt = ctt_l + ctt_r
+        #             tt = tt_l + tt_r
+        #             g.append((tree.loss - ctt)/(tt - 1))
+        #             return ctt, tt
+        #         else:
+        #             ctt += tree.loss
+        #             tt += 1
+        #             return ctt, tt
+        #     postorder(tree, ctt, tt, 0)
+        #     print(g, ctt, tt)
+        #     return
 
         class DeTreeNode:
             def __init__(self):
@@ -176,15 +177,20 @@ class MyModel:
 
         length = len(dataframe[dataframe['Survived'].notnull()])
         dataset = dataframe.values[:length]
-        np.random.seed(6)
-        np.random.shuffle(dataset)
-        root = DeTreeNode()
-        decision_tree = node_divide(root, dataset, 0)
-        result = np.zeros(len(dataframe) - length)
-        result = predict(decision_tree, dataframe[length:])
-        # pruning(decision_tree)
+        k = dataset.shape[0]//4
+        labels = []
+        for i in range(4):
+            np.random.seed(i)
+            np.random.shuffle(dataset)
+            subdata = dataset[i*k: (i+1)*k]
+            root = DeTreeNode()
+            decision_tree = node_divide(root, subdata, 0)
+            result = np.zeros(len(dataframe) - length)
+            result = predict(decision_tree, dataframe[length:])
+            labels.append(result)
 
-        return result
+        bagging_result = stats.mode(np.array(labels))[0][0]
+        return bagging_result
 
 
     @staticmethod
